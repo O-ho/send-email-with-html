@@ -10,10 +10,64 @@ const { renderEmailBodyHtml } = require('./templates/email-body-template');
 const { renderInnerReportHtml } = require('./templates/inner-report-template');
 const { renderReportPdfBuffer } = require('./templates/report-pdf-template');
 
-const PASSWORD = process.env.MAIL_PASSWORD || '940721';
+const PASSWORD = process.env.MAIL_PASSWORD || '9755';
 const TO = process.env.MAIL_TO || 'pazzang0@gmail.com';
+// mockup 데이터 [거래내역]
+function fmtNumber(n) {
+  return n.toLocaleString('en-US');
+}
 
-/** 메일 본문·거래내역(첨부) 하단 공통 회사 정보·안내 안쓸수도 있음 미리 만들어둠 */
+function makeDate(month, day, year) {
+  return `${month}/${String(day).padStart(2, '0')}/${year}`;
+}
+
+function buildMockTransactionRows() {
+  const groups = [
+    ['TSLA', 'Tesla Inc.', 241500, 10],
+    ['NVDA', 'NVIDIA Corp.', 132500, 10],
+    ['AAPL', 'Apple Inc.', 274000, 10],
+    ['MSFT', 'Microsoft Corp.', 589000, 10],
+    ['AMZN', 'Amazon.com Inc.', 211300, 10],
+    ['GOOGL', 'Alphabet Inc. Class A', 198200, 10],
+    ['META', 'Meta Platforms Inc.', 612000, 10],
+    ['AVGO', 'Broadcom Inc.', 1945000, 10],
+    ['AMD', 'Advanced Micro Devices', 243700, 10],
+    ['NFLX', 'Netflix Inc.', 701200, 10],
+    ['QQQ', 'Invesco QQQ Trust', 695500, 10],
+  ];
+
+  const rows = [];
+  let day = 1;
+  let month = 4;
+  const year = 2026;
+
+  for (const [ticker, name, basePrice, count] of groups) {
+    for (let i = 0; i < count; i += 1) {
+      const isSell = i % 3 === 1;
+      const price = basePrice + ((i % 5) - 2) * Math.round(basePrice * 0.008);
+      const qty = 8 + ((i + ticker.length) % 47);
+      const amount = price * qty;
+      rows.push([
+        makeDate(month, day, year),
+        ticker,
+        name,
+        fmtNumber(price),
+        `${isSell ? '-' : ''}${fmtNumber(qty)}`,
+        `${isSell ? '-' : ''}${fmtNumber(amount)}`,
+      ]);
+
+      day += 1;
+      if (day > 30) {
+        day = 1;
+        month += 1;
+      }
+    }
+  }
+
+  return rows;
+}
+
+/** 메일 본문·거래내역(첨부) 하단 공통 회사 정보·안내 */
 const LEGAL_FOOTER = {
   companyRowHtml:
     '<strong>엠엘투자자문(주)</strong> 서울특별시 강남구 역삼로17길 10 | 사업자등록번호 341-88-02703 | 대표 윤도선',
@@ -39,7 +93,7 @@ const DUMMY_REPORT_DATA = {
     cumulativeReturn: '1.33%',
     periodReturn: '1.33%',
     investmentProfile: '적극투자형',
-    investmentRestrictions: ['1) 개별 주식은 미국 주식만 편입', '2) 미국 채권 ETF, 중국 주식 ETF 편입'],
+    investmentRestrictions: ['-'],
     marketSummary: '최근 3개월간 KOSPI 지수는 +27.2%, S&P500 지수는 +1.4% 변동하였습니다.',
   },
   page3: {
@@ -101,6 +155,9 @@ const DUMMY_REPORT_DATA = {
     dateText: '2026년 4월 1일',
     signer: '엠엘투자자문(주) 대표이사 윤도선',
   },
+  page8: {
+    transactionRows: buildMockTransactionRows(),
+  },
 };
 
 function loadCompanyLogoDataUri() {
@@ -122,10 +179,6 @@ async function buildInnerHtml() {
   });
 }
 
-function distPath(name) {
-  return path.join(__dirname, 'dist', name);
-}
-
 async function buildPdfBuffer() {
   const innerHtml = await buildInnerHtml();
   return renderReportPdfBuffer({
@@ -145,8 +198,12 @@ async function buildEmailBodyHtml() {
 async function send() {
   const pdfBuffer = await buildPdfBuffer();
   const emailBodyHtml = await buildEmailBodyHtml();
-  const sentAt = new Date().toISOString().replace(/[-:TZ.]/g, '').slice(0, 14);
-  const attachmentName = `transaction-report-${sentAt}.pdf`;
+  const today = new Date();
+  const yyyy = String(today.getFullYear());
+  const mm = String(today.getMonth() + 1).padStart(2, '0');
+  const dd = String(today.getDate()).padStart(2, '0');
+  const reportDate = `${yyyy}-${mm}-${dd}`;
+  const attachmentName = `mystockplan-report(${reportDate}).pdf`;
 
   const user = process.env.GMAIL_USER;
   const pass = process.env.GMAIL_APP_PASSWORD;
@@ -169,7 +226,6 @@ async function send() {
     service: 'gmail',
     auth: { user, pass },
   });
-// dummy text
   const bodyText =
     `한 달 주식 매매내역이 비밀번호 보호 PDF 첨부(${attachmentName})로 전달되었습니다.\n` +
     '첨부를 열고 비밀번호를 입력해 열람해 주세요.\n' +
@@ -179,7 +235,7 @@ async function send() {
   await transporter.sendMail({
     from: `"주식 매매내역 샘플" <${user}>`,
     to: TO,
-    subject: '[마이스톡플랜] 거래 내역 보고서 (비밀번호 PDF)',
+    subject: '[마이스톡플랜] 투자일임보고서',
     text: bodyText,
     html: emailBodyHtml,
     attachments: [

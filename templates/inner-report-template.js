@@ -54,6 +54,7 @@ function validateReportData(reportData) {
     ['page5.professionalRows', 1],
     ['page6.algorithmRows', 1],
     ['page6.maintenanceRows', 1],
+    ['page8.transactionRows', 1],
   ];
 
   for (const path of requiredStrings) {
@@ -181,6 +182,10 @@ function buildHtml(props) {
     .map((r) => row([td(r[0]), td(r[1]), td(r[2])]))
     .join('');
 
+  const transactionRows = p.page8.transactionRows
+    .map((r) => row([td(r[0], 'trade-date'), td(r[1]), td(r[2], 'text-left'), td(r[3], 'trade-num'), td(r[4], 'trade-num'), td(r[5], 'trade-num')]))
+    .join('');
+
   return `<!doctype html>
 <html lang="ko">
 <head>
@@ -254,6 +259,20 @@ p{margin:16px 0;font-size:16px;line-height:1.5}
 .t-pro col:nth-child(3){width:32%}
 .t-holdings tbody td{font-size:12px}
 .py8{padding-top:8px!important;padding-bottom:8px!important}
+.appendix-page{break-before:page;page-break-before:always;margin-top:0}
+.appendix-title{margin:0 0 10px;font-size:22px;font-weight:700;line-height:1.2;letter-spacing:-.01em}
+.appendix-unit{margin:0 0 6px;text-align:right;font-size:12px;color:#333}
+.t-trade{margin:0}
+.t-trade col:nth-child(1){width:15%}
+.t-trade col:nth-child(2){width:12%}
+.t-trade col:nth-child(3){width:25%}
+.t-trade col:nth-child(4){width:16%}
+.t-trade col:nth-child(5){width:16%}
+.t-trade col:nth-child(6){width:16%}
+.t-trade th,.t-trade td{padding:4px 6px;font-size:10px;line-height:1.25;border:1px solid #2b2b2b}
+.t-trade th{font-weight:500}
+.trade-num{text-align:right}
+.trade-date{text-align:center}
 @media print{
   body{background:#fff}
   .report{margin:0 auto;padding:18px 20px 24px;width:100%}
@@ -388,6 +407,27 @@ p{margin:16px 0;font-size:16px;line-height:1.5}
     <p class="d">${p.page7.dateText}</p>
     <p class="n">${p.page7.signer}</p>
   </div>
+
+  <section class="appendix-page">
+    <h2 class="appendix-title">별지. 거래내역</h2>
+    <p class="appendix-unit">(단위 : 원)</p>
+    <table class="t-trade">
+      <colgroup><col><col><col><col><col><col></colgroup>
+      <thead>
+        ${row([
+          th('거래일자', 'bg-accent'),
+          th('ticker', 'bg-accent'),
+          th('종목명', 'bg-accent'),
+          th('거래가격', 'bg-accent'),
+          th('거래수량', 'bg-accent'),
+          th('거래금액', 'bg-accent'),
+        ])}
+      </thead>
+      <tbody>
+        ${transactionRows}
+      </tbody>
+    </table>
+  </section>
 </article>
 </body>
 </html>`;

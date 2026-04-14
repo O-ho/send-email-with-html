@@ -13,7 +13,7 @@ const { renderReportPdfBuffer } = require('./templates/report-pdf-template');
 const PASSWORD = process.env.MAIL_PASSWORD || '940721';
 const TO = process.env.MAIL_TO || 'pazzang0@gmail.com';
 
-/** 메일 본문·거래내역(첨부) 하단 공통 회사 정보·안내 */
+/** 메일 본문·거래내역(첨부) 하단 공통 회사 정보·안내 안쓸수도 있음 미리 만들어둠 */
 const LEGAL_FOOTER = {
   companyRowHtml:
     '<strong>엠엘투자자문(주)</strong> 서울특별시 강남구 역삼로17길 10 | 사업자등록번호 341-88-02703 | 대표 윤도선',
@@ -77,6 +77,7 @@ const DUMMY_REPORT_DATA = {
       ['기간누적<br><span class="sm">(2025-11-03 ~ 2026-02-02)</span>', ' 6개월 무료', '1,229,041', '8,560', '1,237,061'],
     ],
     feePolicyRow: ['2025-11-03 ~ 2026-02-02', '운용금액의 연 0.5%, 최초 6개월 무료', '해당사항 없음'],
+    // 3*5 table
     professionalRows: [
       ['직위', '대표이사', '본부장'],
       ['성명', '윤도선', '김민기'],

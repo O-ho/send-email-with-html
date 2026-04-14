@@ -142,49 +142,6 @@ async function buildEmailBodyHtml() {
   });
 }
 
-async function writePreviewPdf() {
-  const out = distPath('preview-report.pdf');
-  fs.mkdirSync(path.dirname(out), { recursive: true });
-  const pdfBuffer = await buildPdfBuffer();
-  fs.writeFileSync(out, pdfBuffer);
-  return out;
-}
-
-async function writePreviewEmailBody() {
-  const out = distPath('preview-email-body.html');
-  fs.mkdirSync(path.dirname(out), { recursive: true });
-  const emailBodyHtml = await buildEmailBodyHtml();
-  fs.writeFileSync(out, emailBodyHtml, 'utf8');
-  return out;
-}
-// 예시 링크 포함 html 페이지
-function writePreviewHub() {
-  const out = distPath('preview.html');
-  const html = `<!DOCTYPE html>
-<html lang="ko">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>미리보기</title>
-<style>
-  body { font-family: '맑은 고딕', system-ui, sans-serif; padding: 2rem; max-width: 42rem; margin: 0 auto; line-height: 1.5; color: #343a40; }
-  a { color: #2489f4; }
-  li { margin: 0.6rem 0; }
-</style>
-</head>
-<body>
-  <h1>월별 거래내역 보고서 (PDF 비밀번호 방식)</h1>
-  <p>첨부파일은 비밀번호 보호 PDF로 발송됩니다.</p>
-  <ul>
-    <li><a href="preview-report.pdf">첨부 PDF 미리보기</a> — 비밀번호 필요</li>
-    <li><a href="preview-email-body.html">메일 본문 HTML</a> — 발송 시 본문</li>
-  </ul>
-</body>
-</html>`;
-  fs.writeFileSync(out, html, 'utf8');
-  return out;
-}
-
 async function send() {
   const pdfBuffer = await buildPdfBuffer();
   const emailBodyHtml = await buildEmailBodyHtml();
@@ -238,28 +195,6 @@ async function send() {
 }
 
 async function main() {
-  if (process.argv.includes('--preview-all')) {
-    fs.mkdirSync(path.join(__dirname, 'dist'), { recursive: true });
-    const pdf = await writePreviewPdf();
-    const email = await writePreviewEmailBody();
-    const hub = writePreviewHub();
-    console.log('미리보기 생성:', pdf, email, hub);
-    return;
-  }
-
-  if (process.argv.includes('--preview-email-body')) {
-    const out = await writePreviewEmailBody();
-    console.log('메일 본문 미리보기:', out);
-    return;
-  }
-
-  if (process.argv.includes('--preview-inner')) {
-    const out = await writePreviewPdf();
-    console.log('첨부(PDF) 미리보기:', out);
-    console.log('메일 본문까지 보려면: npm run preview:all 또는 npm run preview:dev');
-    return;
-  }
-
   await send();
 }
 
